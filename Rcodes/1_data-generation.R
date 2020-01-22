@@ -107,6 +107,7 @@ for (i in 1: m2){
      casecrt.dat = rbind(casecrt.dat, tmp)
 }
 
+save(cohort.dat, casecrt.dat, file = paste("data/meta-data-generation-seed", seed, ".RData", sep = ""))
 
 cohort.dat %>%
      group_by(trial) %>%
