@@ -108,13 +108,11 @@ for (i in 1: m2){
 }
 
 
-#cohort.dat %>%
+cohort.dat %>%
      group_by(trial) %>%
      count()
 
-#casecrt.dat %>%
+casecrt.dat %>%
      group_by(trial) %>%
      count()
 
-n.min = n2.min
-n.max = n2.max
