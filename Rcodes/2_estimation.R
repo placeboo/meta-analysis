@@ -16,4 +16,11 @@ test = max.likelihood.v2(y = cohort.dat$y,
                               beta.start = c(0,0))
 
 
+library(MEM)
+test2 = mem.mono(y = cohort.dat$y, 
+         z = cohort.dat$z, 
+         va = cbind(cohort.dat$v1, cohort.dat$v2),
+         vb = cbind(cohort.dat$v1, cohort.dat$v2),
+         alpha.start = c(0,0),
+         beta.start = c(0,0))
 # -------- estimation, both ----------
