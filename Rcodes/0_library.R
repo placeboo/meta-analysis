@@ -1,3 +1,3 @@
 library(brm)
-#library(MEM)
+library(MEM)
 library(dplyr)
