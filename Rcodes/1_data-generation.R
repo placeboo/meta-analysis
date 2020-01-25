@@ -11,8 +11,8 @@ n1 = 1000
 
 ## case-control study
 m2 = 1
-n2 = 200
-n20 = 150
+n2 = 500
+n20 = 300
 
 # ------- model setting ---------
 gamma.true = c(0, 0.2)
