@@ -4,7 +4,7 @@ source("Rcodes/0_library.R")
 seed = 1
 set(seed)
 # ------ study setting ------------
-n = 5000
+n = 10000
 ## cohort study
 m1 = 1
 n1 = 1000
@@ -12,7 +12,7 @@ n1 = 1000
 ## case-control study
 m2 = 1
 n2 = 500
-n20 = 300
+n20 = 200
 
 # ------- model setting ---------
 gamma.true = c(0, 0.2)
@@ -29,7 +29,7 @@ simData = function(n, n1, n2, n20, gamma.true, beta.true, eta.true) {
         pz = exp(va %*% eta.true) / (1 + exp(va %*% eta.true))
         z = rbinom(n, 1, pz)
         
-        P.mat = t(mapply(getProbScalarRR, va %*% gamma.true * 2, va %*% beta.true))
+        P.mat = t(mapply(getProbScalarRR, va %*% gamma.true, va %*% beta.true))
         
         y = rep(0, n)
         
