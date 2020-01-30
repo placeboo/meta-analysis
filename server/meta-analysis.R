@@ -13,8 +13,7 @@ source("0a_helper.R")
 
 set.seed(seed)
 # ------ study setting ------------
-n = 10000
-st = "01282020"
+st = "01292020"
 n21 = round(n2/3)
 
 beta.true = c(-7, 0.5)
@@ -24,49 +23,74 @@ eta.true = c(0.2,-1)
 
 # ------- data simulation function------
 
-simData = function(n, n1, n2, n21, gamma.true, beta.true, eta.true) {
-     
-     v1 = rep(1, n)
-     v2 = runif(n, -2, 2)
-     va = cbind(v1, v2)
-     
-     pz = exp(va %*% eta.true) / (1 + exp(va %*% eta.true))
-     z = rbinom(n, 1, pz)
-     
-     P.mat = t(mapply(getProbScalarRR, va %*% gamma.true, va %*% beta.true))
-     
-     y = rep(0, n)
-     
-     for(i in 1:2){
-          y[z == i-1] = rbinom(length(which(z==i-1)), 1, P.mat[z==i-1,i])
-     }
-     
-     data = as.data.frame(cbind(va, z, y))
-     names(data) = c("v1", "v2", "z", "y")
-     
-     
-     # cohort data 
-     cohort.idx = sample(1: n, size = n1, replace = TRUE)
-     cohort.data = data[cohort.idx,]
-     
-     # case control study
-     case = data %>%
-          filter(y==1)
-     case = case[sample(1:nrow(case), size = n21, replace = TRUE), ]
-     
-     control = data %>%
-          filter(y==0)
-     control = control[sample(1:nrow(control), size = n2 - n21, replace = TRUE), ]
-     
-     casecrt.dat = rbind(case, control)
-     
-     return(list(cohort = cohort.data, case.control = casecrt.dat))
-     
+simData = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
+        
+        # cohort study
+        v1 = rep(1, 20000)
+        v2 = runif(20000, -2, 2)
+        va = cbind(v1, v2)
+        
+        pz = exp(va %*% eta.true) / (1 + exp(va %*% eta.true))
+        z = rbinom(20000, 1, pz)
+        
+        P.mat = t(mapply(getProbScalarRR, va %*% gamma.true, va %*% beta.true))
+        
+        y = rep(0, 20000)
+        
+        for(i in 1:2){
+                y[z == i-1] = rbinom(length(which(z==i-1)), 1, P.mat[z==i-1,i])
+        }
+        
+        data = as.data.frame(cbind(va, z, y))
+        names(data) = c("v1", "v2", "z", "y")
+        
+        cohort.data = data[1: n1, ]
+        
+        data = data[-c(1:n1), ] 
+        
+        # case control study
+        control = data %>%
+                filter(y == 0)
+        control = control[c(1: (n2 - n21)), ]
+        
+        case = data %>%
+                filter(y == 1)
+        
+        while (nrow(case) < n21) {
+                
+                v1 = rep(1, 10000)
+                v2 = runif(10000, -2, 2)
+                va = cbind(v1, v2)
+                
+                pz = exp(va %*% eta.true) / (1 + exp(va %*% eta.true))
+                z = rbinom(10000, 1, pz)
+                
+                P.mat = t(mapply(getProbScalarRR, va %*% gamma.true, va %*% beta.true))
+                
+                y = rep(0, 10000)
+                
+                for(i in 1:2){
+                        y[z == i-1] = rbinom(length(which(z==i-1)), 1, P.mat[z==i-1,i])
+                }
+                
+                data = as.data.frame(cbind(va, z, y))
+                names(data) = c("v1", "v2", "z", "y")
+                
+                case = data %>%
+                        filter(y == 1) %>%
+                        rbind(case)
+        }
+        case = case[1: n21, ]
+        
+        casecrt.dat = rbind(case, control)
+        
+        return(list(cohort = cohort.data, case.control = casecrt.dat))
+        
 }
 
-do.one.simulation = function(n, n1, n2, n21, gamma.true, beta.true, eta.true) {
+do.one.simulation = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
      #------------- meta dataset generation ------------
-     metadata = simData(n, n1, n2, n21, gamma.true, beta.true, eta.true)
+     metadata = simData(n1, n2, n21, gamma.true, beta.true, eta.true)
      cohort.dat = metadata$cohort
      casecrt.dat = metadata$case.control
      print(sum(cohort.dat$y)/n1)
