@@ -5,7 +5,10 @@ source("Rcodes/0_library.R")
 source("Rcodes/0a_helper.R")
 
 # --------- load data ------------------------
-load("data/meta-data-generation-seed1.RData")
+n1 = 1000
+n2 = 500
+seed = 2
+load( paste("data/crt", n1, "_casecrt", n2, "_seed", seed, ".RData", sep = ""))
 
 # -------- estimation, corhort only ----------
 test = mem.mono(y = cohort.dat$y, 
@@ -38,6 +41,7 @@ test3 = max.likelihood.casecrt(y = casecrt.dat$y,
                                ps.mat = ps.mat,
                                alpha.start = c(0,0),
                                beta.start = c(0,0))
+
 test4 = max.likelihood.casecrt(y = casecrt.dat$y, 
                                z = casecrt.dat$z, 
                                va = cbind(casecrt.dat$v1, casecrt.dat$v2),
@@ -46,10 +50,11 @@ test4 = max.likelihood.casecrt(y = casecrt.dat$y,
                                alpha.start = test$point.est[c(1,2)],
                                beta.start = test$point.est[c(3,4)])
 # -------- estimation, both ----------
-ps.model = glm(c(cohort.dat$y, casecrt.dat$z) ~ c(cohort.dat$v2,casecrt.dat$z), family = binomial(link='logit'))
+ps.model1 = glm(c(cohort.dat$z, casecrt.dat$z) ~ c(cohort.dat$v2, casecrt.dat$v2), family = binomial(link='logit'))
 
-ps = exp(predict(ps.model)) / (exp(predict(ps.model)) + 1)
-ps.mat = cbind(1-ps, ps)[-c(1:nrow(cohort.dat)), ]
+ps = exp(predict(ps.model1)) / (exp(predict(ps.model1)) + 1)
+ps = ps[-c(1:nrow(cohort.dat))]
+ps.mat1 = cbind(1-ps, ps)
 
 test.all = max.likelihood.all(case.control = list(y = casecrt.dat$y, 
                                                   z = casecrt.dat$z, 
@@ -61,10 +66,18 @@ test.all = max.likelihood.all(case.control = list(y = casecrt.dat$y,
                                             vb = cbind(cohort.dat$v1, cohort.dat$v2),
                                             alpha.start = c(0,0),
                                             beta.start = c(0,0)),
-                              ps.mat = ps.mat,
+                              ps.mat = ps.mat1,
                               alpha.start = c(0,0),
                               beta.start = c(0,0))
-test.all$coefficients
+
+test5 = max.likelihood.casecrt(y = casecrt.dat$y, 
+                               z = casecrt.dat$z, 
+                               va = cbind(casecrt.dat$v1, casecrt.dat$v2),
+                               vb = cbind(casecrt.dat$v1, casecrt.dat$v2),
+                               ps.mat = ps.mat1,
+                               alpha.start = test$point.est[c(1,2)],
+                               beta.start = test$point.est[c(3,4)])
+
 
 test$coefficients
 test1$coefficients
@@ -72,4 +85,6 @@ test1$coefficients
 test3$coefficients
 test4$coefficients
 
-test$coefficients
+test5$coefficients
+test.all$coefficients
+
