@@ -1,26 +1,27 @@
 rm(list = ls())  
 source("Rcodes/0_library.R")
 
-seed = 1
-set(seed)
+seed = 2
+set.seed(seed)
 # ------ study setting ------------
 n = 10000
 ## cohort study
 m1 = 1
-n1 = 1000
+n1 = 2000
 
 ## case-control study
 m2 = 1
 n2 = 500
-n20 = 200
+n21 = round(n2/3)
 
 # ------- model setting ---------
-gamma.true = c(0, 0.2)
-beta.true = c(-5, 0.5)
+beta.true = c(-7, 0.5)
+gamma.true = c(0,-1)
+#beta.true = c(-0.5, 1)
 eta.true = c(0.2,-1)
 
 # ------- data simulation function------
-simData = function(n, n1, n2, n20, gamma.true, beta.true, eta.true) {
+simData = function(n, n1, n2, n21, gamma.true, beta.true, eta.true) {
         
         v1 = rep(1, n)
         v2 = runif(n, -2, 2)
@@ -48,11 +49,11 @@ simData = function(n, n1, n2, n20, gamma.true, beta.true, eta.true) {
         # case control study
         case = data %>%
                 filter(y==1)
-        case = case[sample(1:nrow(case), size = n2-n20, replace = TRUE), ]
+        case = case[sample(1:nrow(case), size = n21, replace = TRUE), ]
         
         control = data %>%
                 filter(y==0)
-        control = control[sample(1:nrow(control), size = n20, replace = TRUE), ]
+        control = control[sample(1:nrow(control), size = n2 - n21, replace = TRUE), ]
         
         casecrt.dat = rbind(case, control)
         
@@ -61,10 +62,13 @@ simData = function(n, n1, n2, n20, gamma.true, beta.true, eta.true) {
 }
 
 #------------- meta dataset generation ------------
-metadata = simData(n, n1, n2, n20, gamma.true, beta.true, eta.true)
+metadata = simData(n, n1, n2, n21, gamma.true, beta.true, eta.true)
 cohort.dat = metadata$cohort
 casecrt.dat = metadata$case.control
+sum(cohort.dat$y)/n1
+save(cohort.dat, casecrt.dat, file = paste("data/crt", n1, "_casecrt", n2, "_seed", seed, ".RData", sep = ""))
 
-save(cohort.dat, casecrt.dat, file = paste("data/meta-data-generation-seed", seed, ".RData", sep = ""))
 
+# test if the simultion is correct for case control study
+sum(casecrt.dat$y) / nrow(casecrt.dat) # 0.4
 
