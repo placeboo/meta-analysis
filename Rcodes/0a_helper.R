@@ -103,7 +103,7 @@ max.likelihood.casecrt = function(y, z, va, vb, ps.mat,
 max.likelihood.all= function(case.control = list(y, z, va, vb),
                              cohort = list(y, z, va, vb),
                              ps.mat,
-                             alpha.start, beta.start, max.step=10^5, thres=10^-5){
+                             alpha.start, beta.start, max.step=10^4, thres=10^-6){
      
      
     
