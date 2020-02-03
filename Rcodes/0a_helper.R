@@ -236,7 +236,7 @@ max.likelihood.all= function(case.control = list(y, z, va, vb),
 
 orgEst = function(point.est, cov, type, name, va, vb, coverged){
         
-        if (any(is.na(cov)) | any(cov < 0)) {
+        if (any(is.na(cov)) | any(diag(cov < 0))) {
                 se.est = conf.lower = conf.upper = p.value = rep(NA, length(point.est))
                 
         } else {
