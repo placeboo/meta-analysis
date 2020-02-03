@@ -6,11 +6,11 @@ set.seed(seed)
 # ------ study setting ------------
 ## cohort study
 m1 = 1
-n1 = 2000
+n1 = 500
 
 ## case-control study
 m2 = 1
-n2 = 500
+n2 = 200
 n21 = round(n2/3)
 
 # ------- model setting ---------
@@ -18,6 +18,9 @@ beta.true = c(-7, 0.5)
 gamma.true = c(0,-1)
 #beta.true = c(-0.5, 1)
 eta.true = c(0.2,-1)
+# beta.true = c(-1, 0.5)
+# gamma.true = c(0,1)
+# eta.true = c(1,-1)
 
 # ------- data simulation function------
 simData = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
