@@ -1,0 +1,5 @@
+beta.true = c(-7, 0.5)
+gamma.true = c(0,-1)
+eta.true = c(0.2,-1)
+
+keep sampling if cases are not enough. No replicated samples.

@@ -1,0 +1,3 @@
+beta.true = c(-1, 0.5)
+gamma.true = c(0,1)
+eta.true = c(1,-1)
