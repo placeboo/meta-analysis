@@ -6,11 +6,11 @@ set.seed(seed)
 # ------ study setting ------------
 ## cohort study
 m1 = 1
-n1 = 500
+n1 = 1000
 
 ## case-control study
 m2 = 1
-n2 = 200
+n2 = 500
 n21 = round(n2/3)
 
 # ------- model setting ---------
