@@ -1,5 +1,5 @@
 #!/usr/local/bin/Rscript
-rm(list = ls())
+rm(list = ls()) 
 
 args = commandArgs(TRUE)
 
@@ -8,12 +8,12 @@ n2 = as.numeric(args[[2]])
 seed = as.numeric(args[[3]])
 
 library(brm)
-source("0_library.R")
-source("0a_helper.R")
+library(dplyr)
+source("Rcodes/0a_helper.R")
 
 set.seed(seed)
 # ------ study setting ------------
-st = "01292020"
+st = "02022020"
 n21 = round(n2/3)
 
 beta.true = c(-7, 0.5)
@@ -93,10 +93,9 @@ do.one.simulation = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
      metadata = simData(n1, n2, n21, gamma.true, beta.true, eta.true)
      cohort.dat = metadata$cohort
      casecrt.dat = metadata$case.control
-     print(sum(cohort.dat$y)/n1)
+     #print(sum(cohort.dat$y)/n1)
      #save(cohort.dat, casecrt.dat, file = paste("data/crt", n1, "_casecrt", n2, "_seed", seed, "_",st, ".RData", sep = ""))
      
-     # -------- estimation, corhort only ----------
      test1 = brm(y = cohort.dat$y, 
                  x = cohort.dat$z, 
                  va = cbind(cohort.dat$v1, cohort.dat$v2),
@@ -110,38 +109,34 @@ do.one.simulation = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
      # -------- estimation, case control only ----------
      # propensity score model
      ps.model = glm(casecrt.dat$z ~ casecrt.dat$v2, family = binomial(link='logit'))
-     ps = exp(predict(ps.model)) / (exp(predict(ps.model)) + 1)
-     ps.mat = cbind(1-ps, ps)
+     
      
      test2 = max.likelihood.casecrt(y = casecrt.dat$y, 
                                     z = casecrt.dat$z, 
                                     va = cbind(casecrt.dat$v1, casecrt.dat$v2),
                                     vb = cbind(casecrt.dat$v1, casecrt.dat$v2),
-                                    ps.mat = ps.mat,
                                     alpha.start = c(0,0),
-                                    beta.start = c(0,0))
+                                    beta.start = c(0,0),
+                                    eta.start = c(0,0))
      
      test3 = max.likelihood.casecrt(y = casecrt.dat$y, 
                                     z = casecrt.dat$z, 
                                     va = cbind(casecrt.dat$v1, casecrt.dat$v2),
                                     vb = cbind(casecrt.dat$v1, casecrt.dat$v2),
-                                    ps.mat = ps.mat,
-                                    alpha.start = test1$point.est[c(1,2)],
-                                    beta.start = test1$point.est[c(3,4)])
+                                    alpha.start = c(0,0),
+                                    beta.start = c(0,0),
+                                    eta.start = ps.model$coefficients)
      # -------- estimation, both ----------
      ps.model1 = glm(c(cohort.dat$z, casecrt.dat$z) ~ c(cohort.dat$v2, casecrt.dat$v2), family = binomial(link='logit'))
      
-     ps = exp(predict(ps.model1)) / (exp(predict(ps.model1)) + 1)
-     ps = ps[-c(1:nrow(cohort.dat))]
-     ps.mat1 = cbind(1-ps, ps)
      
      test4 = max.likelihood.casecrt(y = casecrt.dat$y, 
                                     z = casecrt.dat$z, 
                                     va = cbind(casecrt.dat$v1, casecrt.dat$v2),
                                     vb = cbind(casecrt.dat$v1, casecrt.dat$v2),
-                                    ps.mat = ps.mat1,
                                     alpha.start = test1$point.est[c(1,2)],
-                                    beta.start = test1$point.est[c(3,4)])
+                                    beta.start = test1$point.est[c(3,4)],
+                                    eta.start = ps.model1$coefficients)
      
      test.all = max.likelihood.all(case.control = list(y = casecrt.dat$y, 
                                                        z = casecrt.dat$z, 
@@ -150,13 +145,10 @@ do.one.simulation = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
                                    cohort = list(y = cohort.dat$y, 
                                                  z = cohort.dat$z, 
                                                  va = cbind(cohort.dat$v1, cohort.dat$v2),
-                                                 vb = cbind(cohort.dat$v1, cohort.dat$v2),
-                                                 alpha.start = c(0,0),
-                                                 beta.start = c(0,0)),
-                                   ps.mat = ps.mat1,
+                                                 vb = cbind(cohort.dat$v1, cohort.dat$v2)),
                                    alpha.start = c(0,0),
-                                   beta.start = c(0,0))
-     
+                                   beta.start = c(0,0),
+                                   eta.start = ps.model1$coefficients)
      opt = c(c(test1$coefficients[,c(1,2)]),
              c(test2$coefficients[,c(1,2)]),
              c(test3$coefficients[,c(1,2)]),
@@ -166,10 +158,22 @@ do.one.simulation = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
      return(opt)
 }
 
-N_sim = 100
-est.mat = replicate(N_sim, do.one.simulation(n, n1, n2, n21, gamma.true, beta.true, eta.true))
+N_sim = 50
+est.mat = replicate(N_sim, do.one.simulation(n1, n2, n21, gamma.true, beta.true, eta.true))
 
-save(est.mat, file = paste("data/crt", n1, "_casecrt", n2, "_seed", seed, "_", st, ".RData", sep = ""))
+index = unique(unlist(apply(est.mat, 1, function(x) which(is.na(x)))))
+
+if (length(index) > 0){
+        est.mat = est.mat[,-index]
+        est.tmp = replicate(length(index), do.one.simulation(n1, n2, n21, gamma.true, beta.true, eta.true))
+        est.mat = cbind(est.mat, est.tmp)
+        
+        index = unique(unlist(apply(est.mat, 1, function(x) which(is.na(x)))))
+        
+}
+
+
+save(est.mat, file = paste("data3/crt", n1, "_casecrt", n2, "_seed", seed, "_", st, ".RData", sep = ""))
 
 
 
