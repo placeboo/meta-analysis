@@ -1,22 +1,19 @@
 # ----- monotonic treatment estimator ------------
-max.likelihood.casecrt = function(y, z, va, vb,
-                                   alpha.start, beta.start, eta.start,
-                                   max.step=10^4, thres=10^-6) {
+max.likelihood.casecrt = function(y, z, va, vb, ps.mat,
+                                  alpha.start, beta.start, 
+                                  max.step=10^4, thres=10^-6) {
     if (!is.numeric(z)) stop("'z' should be numerical!")
     
     pa = length(alpha.start)
     pb = length(beta.start)
-    pc = length(eta.start)
+    
     
     ny = length(y)
     
     z.uniq = sort(unique(z))
     nz = length(z.uniq)
     
-    neg.log.value = function(alpha, beta, eta){
-        
-        ps = exp(va %*% eta) / (1 + exp(va %*% eta))
-        ps.mat = cbind(1-ps, ps)
+    neg.log.value = function(alpha, beta){
         
         Pzmin_Pzmax = t(mapply(getProbScalarRR, va %*% alpha, vb %*% beta))
         P.mat = matrix(0, ncol = nz, nrow = ny)
@@ -44,27 +41,21 @@ max.likelihood.casecrt = function(y, z, va, vb,
     neg.log.likelihood = function(pars){
         alpha = pars[1:pa]
         beta = pars[(pa + 1):(pa + pb)]
-        eta = pars[(pa + pb + 1) : (pa + pb + pc)]
         
-        return(neg.log.value(alpha, beta, eta))
+        return(neg.log.value(alpha, beta))
     }
     
     neg.log.likelihood.alpha = function(alpha){
-        return(neg.log.value(alpha, beta, eta))
-    }
-    
-    neg.log.likelihood.eta = function(eta){
-        return(neg.log.value(alpha, beta, eta))
+        return(neg.log.value(alpha, beta))
     }
     
     neg.log.likelihood.beta = function(beta){
-        return(neg.log.value(alpha, beta, eta))
+        return(neg.log.value(alpha, beta))
     }
     
     Diff = function(x, y) sum((x - y)^2)/sum(x^2 + thres)
     alpha = alpha.start
     beta = beta.start
-    eta = eta.start
     diff = thres + 1
     step = 0
     
@@ -81,25 +72,21 @@ max.likelihood.casecrt = function(y, z, va, vb,
         diff2 = Diff(opt2$par, beta)
         beta = opt2$par
         
-        opt3 = stats::optim(eta, neg.log.likelihood.eta, control = list(maxit = max.step))
-        diff3 = Diff(opt3$par, eta)
-        eta = opt3$par
-        
-        diff = max(diff1, diff2, diff3)
+        diff = max(diff1, diff2)
     }
     # have hessian matrix
-    hessian.mat = try(optimHess(c(alpha,beta,eta), neg.log.likelihood), silent = TRUE)
+    hessian.mat = try(optimHess(c(alpha,beta), neg.log.likelihood), silent = TRUE)
     
     if ("try-error" %in% class(hessian.mat)) {
-        cov = matrix(NA, pa+pb+pc, pa+pb+pc)
+        cov = matrix(NA, pa+pb, pa+pb)
     } else cov = solve(hessian.mat)
     
-    point.est = c(alpha, beta, eta)
+    point.est = c(alpha, beta)
     
     opt = orgEst(point.est = point.est,
                  cov = cov,
                  type = "monotone",
-                 name = c(paste("alpha", 1:ncol(va), sep = ""), paste("beta", 1:ncol(vb), sep = ""), paste("eta", 1:ncol(va), sep = "")),
+                 name = c(paste("alpha", 1:ncol(va), sep = ""), paste("beta", 1:ncol(vb), sep = "")),
                  va=va,
                  vb=vb,
                  coverged = step < max.step)
@@ -132,13 +119,16 @@ max.likelihood.all= function(case.control = list(y, z, va, vb),
         
         cohort.P.mat[, -c(1, nz)] = cohort.Pzmin_Pzmax[,1] * exp(cohort$va %*% alpha %*% t(z.uniq)[-c(1,nz)])
         
+        cohort.ps =  exp(cohort$va %*% eta) / (1 + exp(cohort$va %*% eta))
+        ps.mat = cbind(1-cohort.ps, cohort.ps)
+        
         cohort.n_0.vec = apply(cohort.P.mat, 2, function(x) sum(x==0))
         
         if(identical(all.equal(cohort.n_0.vec, rep(0, nz)), TRUE)){
             value = 0
             
             for(i in 1: length(z.uniq)){
-                value = value - sum(cohort$y[cohort$z==z.uniq[i]] * log(cohort.P.mat[cohort$z==z.uniq[i],i]) + (1-cohort$y[cohort$z==z.uniq[i]]) * log(1-cohort.P.mat[cohort$z==z.uniq[i],i]))
+                value = value - sum(cohort$y[cohort$z==z.uniq[i]] * log(cohort.P.mat[cohort$z==z.uniq[i],i]) + (1-cohort$y[cohort$z==z.uniq[i]]) * log(1-cohort.P.mat[cohort$z==z.uniq[i],i])  + log(ps.mat[cohort$z == z.uniq[i],i]))
                 
             }
         }
@@ -235,40 +225,40 @@ max.likelihood.all= function(case.control = list(y, z, va, vb),
 
 
 orgEst = function(point.est, cov, type, name, va, vb, coverged){
+    
+    if (any(is.na(cov)) | any(diag(cov < 0))) {
+        se.est = conf.lower = conf.upper = p.value = rep(NA, length(point.est))
         
-        if (any(is.na(cov)) | any(diag(cov < 0))) {
-                se.est = conf.lower = conf.upper = p.value = rep(NA, length(point.est))
-                
-        } else {
-                se.est = sqrt(diag(cov))
-                conf.lower = point.est + stats::qnorm(0.025) * se.est
-                conf.upper = point.est + stats::qnorm(0.975) * se.est
-                
-                p.temp = stats::pnorm(point.est/se.est, 0, 1)
-                p.value = 2 * pmin(p.temp, 1 - p.temp)
-        }
+    } else {
+        se.est = sqrt(diag(cov))
+        conf.lower = point.est + stats::qnorm(0.025) * se.est
+        conf.upper = point.est + stats::qnorm(0.975) * se.est
         
+        p.temp = stats::pnorm(point.est/se.est, 0, 1)
+        p.value = 2 * pmin(p.temp, 1 - p.temp)
+    }
+    
+    
+    if (type == "monotone") {
+        names(point.est) = names(se.est) = rownames(cov) = colnames(cov) = names(conf.lower) = names(conf.upper) = names(p.value) = name
+        coefficients = cbind(point.est, se.est, conf.lower, conf.upper,
+                             p.value)
+        linear.predictors = va %*% point.est[1:ncol(va)]
+        param.est = exp(linear.predictors)
         
-        if (type == "monotone") {
-                names(point.est) = names(se.est) = rownames(cov) = colnames(cov) = names(conf.lower) = names(conf.upper) = names(p.value) = name
-                coefficients = cbind(point.est, se.est, conf.lower, conf.upper,
-                                     p.value)
-                linear.predictors = va %*% point.est[1:ncol(va)]
-                param.est = exp(linear.predictors)
-                
-                output = list(point.est = point.est,
-                              se.est = se.est,
-                              cov = cov,
-                              conf.lower = conf.lower,
-                              conf.upper = conf.upper,
-                              p.value = p.value,
-                              coefficients = coefficients,
-                              param = param.est,
-                              converged = coverged)
-                
-                class(output) = c("mem", type, "list")
-                
-        }
-        return(output)
+        output = list(point.est = point.est,
+                      se.est = se.est,
+                      cov = cov,
+                      conf.lower = conf.lower,
+                      conf.upper = conf.upper,
+                      p.value = p.value,
+                      coefficients = coefficients,
+                      param = param.est,
+                      converged = coverged)
+        
+        class(output) = c("mem", type, "list")
+        
+    }
+    return(output)
 }
 
