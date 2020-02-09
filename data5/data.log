@@ -1,0 +1,8 @@
+simulation method:
+n = 2 * (n1 + n2)
+        # cohort study
+        v1 = rep(1, n)
+        v2 = runif(n, -2, 2)
+        va = cbind(v1, v2)
+        
+estimation: only cohort; cohort + case-control
