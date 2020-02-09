@@ -9,7 +9,7 @@ seed = as.numeric(args[[3]])
 
 library(brm)
 library(dplyr)
-source("0a_helper.R")
+source("Rcodes/0a_helper.R")
 
 set.seed(seed)
 # ------ study setting ------------
@@ -25,17 +25,18 @@ eta.true = c(0.2,-1)
 
 simData = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
         
+        n = 2 * (n1 + n2)
         # cohort study
-        v1 = rep(1, 20000)
-        v2 = runif(20000, -2, 2)
+        v1 = rep(1, n)
+        v2 = runif(n, -2, 2)
         va = cbind(v1, v2)
         
         pz = exp(va %*% eta.true) / (1 + exp(va %*% eta.true))
-        z = rbinom(20000, 1, pz)
+        z = rbinom(n, 1, pz)
         
         P.mat = t(mapply(getProbScalarRR, va %*% gamma.true, va %*% beta.true))
         
-        y = rep(0, 20000)
+        y = rep(0, n)
         
         for(i in 1:2){
                 y[z == i-1] = rbinom(length(which(z==i-1)), 1, P.mat[z==i-1,i])
@@ -58,16 +59,16 @@ simData = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
         
         while (nrow(case) < n21) {
                 
-                v1 = rep(1, 10000)
-                v2 = runif(10000, -2, 2)
+                v1 = rep(1, n)
+                v2 = runif(n, -2, 2)
                 va = cbind(v1, v2)
                 
                 pz = exp(va %*% eta.true) / (1 + exp(va %*% eta.true))
-                z = rbinom(10000, 1, pz)
+                z = rbinom(n, 1, pz)
                 
                 P.mat = t(mapply(getProbScalarRR, va %*% gamma.true, va %*% beta.true))
                 
-                y = rep(0, 10000)
+                y = rep(0, n)
                 
                 for(i in 1:2){
                         y[z == i-1] = rbinom(length(which(z==i-1)), 1, P.mat[z==i-1,i])
@@ -139,7 +140,10 @@ do.one.simulation = function(n1, n2, n21, gamma.true, beta.true, eta.true) {
 }
 
 N_sim = 100
+N_sim = 2
 est.mat = replicate(N_sim, do.one.simulation(n1, n2, n21, gamma.true, beta.true, eta.true))
+
+est.mat2 = replicate(N_sim, do.one.simulation(n1, n2, n21, gamma.true, beta.true, eta.true))
 
 index = unique(unlist(apply(est.mat, 1, function(x) which(is.na(x)))))
 
