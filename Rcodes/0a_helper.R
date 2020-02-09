@@ -113,13 +113,13 @@ max.likelihood.all= function(case.control = list(y, z, va, vb),
     neg.log.value = function(alpha, beta, eta){
         
         # cohort
-        cohort.Pzmin_Pzmax = t(mapply(getProbScalarRR, cohort$va %*% alpha, cohort$vb %*% beta))
+        cohort.Pzmin_Pzmax = t(mapply(getProbScalarRR, as.matrix(cohort$va) %*% alpha, as.matrix(cohort$vb) %*% beta))
         cohort.P.mat = matrix(0, ncol = nz, nrow = cohort.ny)
         cohort.P.mat[, c(1, nz)] = cohort.Pzmin_Pzmax
         
-        cohort.P.mat[, -c(1, nz)] = cohort.Pzmin_Pzmax[,1] * exp(cohort$va %*% alpha %*% t(z.uniq)[-c(1,nz)])
+        cohort.P.mat[, -c(1, nz)] = cohort.Pzmin_Pzmax[,1] * exp(as.matrix(cohort$va) %*% alpha %*% t(z.uniq)[-c(1,nz)])
         
-        cohort.ps =  exp(cohort$va %*% eta) / (1 + exp(cohort$va %*% eta))
+        cohort.ps =  exp(as.matrix(cohort$va) %*% eta) / (1 + exp(as.matrix(cohort$va) %*% eta))
         ps.mat = cbind(1-cohort.ps, cohort.ps)
         
         cohort.n_0.vec = apply(cohort.P.mat, 2, function(x) sum(x==0))
@@ -138,10 +138,10 @@ max.likelihood.all= function(case.control = list(y, z, va, vb),
         
         
         # case control
-        casecrt.ps =  exp(case.control$va %*% eta) / (1 + exp(case.control$va %*% eta))
+        casecrt.ps =  exp(as.matrix(case.control$va) %*% eta) / (1 + exp(as.matrix(case.control$va) %*% eta))
         ps.mat = cbind(1-casecrt.ps, casecrt.ps)
         
-        casecrt.P.mat = t(mapply(getProbScalarRR, case.control$va %*% alpha, case.control$vb %*% beta))
+        casecrt.P.mat = t(mapply(getProbScalarRR, as.matrix(case.control$va) %*% alpha, as.matrix(case.control$vb) %*% beta))
         
         casecrt.n_0.vec = apply(casecrt.P.mat, 2, function(x) sum(x==0))
         
@@ -217,8 +217,8 @@ max.likelihood.all= function(case.control = list(y, z, va, vb),
                  cov = cov,
                  type = "monotone",
                  name = c(paste("alpha", 1:pa, sep = ""), paste("beta", 1:pb, sep = ""), paste("eta", 1:pc, "")),
-                 va=rbind(case.control$va, cohort$va),
-                 vb=rbind(case.control$vb,cohort$va),
+                 va=rbind(as.matrix(case.control$va), as.matrix(cohort$va)),
+                 vb=rbind(as.matrix(case.control$va), as.matrix(cohort$va)),
                  coverged = step < max.step)
     return(opt)
 }
