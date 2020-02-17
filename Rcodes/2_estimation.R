@@ -2,14 +2,17 @@ rm(list = ls())
 
 # --------- library and functions -------------
 source("Rcodes/0_library.R")
-
 source("Rcodes/0a_helper.R")
+source("Rcodes/0c_simulation.R")
+
+
+gamma.true = c(0,-1)
+beta.true = c(-7, 0.5)
+eta.true = c(0.2,-1)
 
 # --------- load data ------------------------
-n1 = 500
-n2 = 200
-seed = 2
-load( paste("data/crt", n1, "_casecrt", n2, "_seed", seed, ".RData", sep = ""))
+cohort.dat = simCohort(n = 1000, gamma.true = gamma.true, beta.true = beta.true, eta.true = eta.true)
+casecrt.dat = simCasecrt(n = 200, pr = 1/3, gamma.true = gamma.true, beta.true = beta.true, eta.true = eta.true)
 
 test1 = brm(y = cohort.dat$y, 
             x = cohort.dat$z, 
@@ -18,8 +21,6 @@ test1 = brm(y = cohort.dat$y,
             param = "RR",
             alpha.start = c(0,0),
             beta.start = c(0,0))
-
-
 
 # -------- estimation, case control only ----------
 # propensity score model
