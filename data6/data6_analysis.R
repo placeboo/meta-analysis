@@ -1,6 +1,6 @@
 rm(list = ls())
 
-n1.vec = c(500, 1000, 2000, 4000, 8000)
+n1.vec = c(1000, 2000, 4000, 8000)
 n2.vec = c(200, 500, 1000, 2000, 4000)
 st = "02082020"
 
@@ -16,13 +16,16 @@ final = matrix(NA, ncol = 6)
 for (n1 in n1.vec) {
      mle_tmp_dat = matrix(NA, nrow = 108)
      for (seed in seed.vec) {
-          filename = paste("data6/crt", n1, "_seed", seed, "_", st, ".RData", sep = "")
-          if(file.exists(filename)) {
-               load(filename)
-          } else {
-               next
-          }
-          mle_tmp_dat = cbind(mle_tmp_dat, est.mat)
+          # filename = paste("data6/crt", n1, "_seed", seed, "_", st, ".RData", sep = "")
+          # if(file.exists(filename)) {
+          #      load(filename)
+          # } else {
+          #      next
+          # }
+             
+             filename = paste("data6/crt", n1, "_seed", seed, "_", st, ".RData", sep = "")
+             load(filename)
+             mle_tmp_dat = cbind(mle_tmp_dat, est.mat)
      }
      mle.mat = mle_tmp_dat[,-1]
      
@@ -64,6 +67,6 @@ for (n1 in n1.vec) {
      
      rownames(rst.tmp) = rowname
      colnames(rst.tmp) = c(paste("bias_sd", c(1,2), sep = ""), paste("acc", c(1,2), sep = ""), paste("coverage", c(1,2), sep = ""))
-     final = rbind(final, rst.dat)
+     final = rbind(final, rst.tmp)
 }
 final[-1,]
