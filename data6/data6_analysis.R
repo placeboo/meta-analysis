@@ -1,8 +1,10 @@
 rm(list = ls())
 
+library(xtable)
+
 n1.vec = c(1000, 2000, 4000, 8000)
 n2.vec = c(200, 500, 1000, 2000, 4000)
-st = "02082020"
+st = "02082020" 
 
 seed.vec = 1:50
 
@@ -67,6 +69,10 @@ for (n1 in n1.vec) {
      
      rownames(rst.tmp) = rowname
      colnames(rst.tmp) = c(paste("bias_sd", c(1,2), sep = ""), paste("acc", c(1,2), sep = ""), paste("coverage", c(1,2), sep = ""))
+     
+     
+     #print(xtable(t(rst.tmp[c(1,3,5,7,9, 11), ])))
+     print(xtable(t(rst.tmp[c(2, 4, 6, 8, 10), ])))
      final = rbind(final, rst.tmp)
 }
 final[-1,]
