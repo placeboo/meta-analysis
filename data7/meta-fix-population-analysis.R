@@ -1,12 +1,12 @@
 rm(list = ls())
 
-n = 2000
-n2.vec = seq(from = 0, to = 1600, by=200)
+# n = 2000
+# n2.vec = seq(from = 0, to = 1600, by=200)
 
 # n = 3000
 # n2.vec = seq(from = 0, to = 2400, by = 300)
-# n = 4000
-# n2.vec = seq(from = 0, to=3600, by = 400)
+n = 4000
+n2.vec = seq(from = 0, to=3600, by = 400)
 st = "02152020"
 
 seed.vec = 1:25
