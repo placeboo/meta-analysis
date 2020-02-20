@@ -5,8 +5,17 @@ rm(list = ls())
 
 # n = 3000
 # n2.vec = seq(from = 0, to = 2400, by = 300)
-n = 4000
-n2.vec = seq(from = 0, to=3600, by = 400)
+# n = 4000
+# n2.vec = seq(from = 0, to=3600, by = 400)
+
+# n = 8000
+# n2.vec = seq(from = 0, to = 7200, by = 800)
+
+n = 10000
+n2.vec = seq(from = 0, to = 9000, by = 1000)
+
+# n = 16000
+# n2.vec = seq(from = 0, to = 14400, by = 1600)
 st = "02152020"
 
 seed.vec = 1:25
